@@ -9,3 +9,6 @@ No! That's why we use AI-powered technology to take a photo to truly identify if
 And to make things even better, we can pinpoint you to the closest location to you where you can recycle!
 
 You can find our project at: ecoleap0.web.app
+
+
+Created by 4 bums: Aarav, Abhi, Ezra, & Suyash
