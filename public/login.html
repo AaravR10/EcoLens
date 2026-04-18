@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Login - EcoLens</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <a href="index.html" style="text-decoration: none; display: flex; align-items: center; gap: 10px;">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 3C8 3 4 6 4 10c0 5 8 11 8 11s8-6 8-11c0-4-4-7-8-7z" fill="#3B6D11" opacity="0.15" />
+                        <path d="M9 12l2 2 4-4" stroke="#3B6D11" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        <circle cx="12" cy="12" r="8" stroke="#3B6D11" stroke-width="1.5" fill="none" />
+                        <path d="M4 12h-2M20 12h2M12 4V2M12 20v2" stroke="#3B6D11" stroke-width="1.5" stroke-linecap="round" opacity="0.5" />
+                    </svg>
+                </div>
+                <span class="logo-name">EcoLens</span>
+            </a>
+        </div>
+    </header>
+
+    <main class="login-main">
+        <div class="login-card">
+            <h1 class="login-title">Welcome Back</h1>
+            <p class="login-subtitle">Sign in to your EcoLens account</p>
+
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" required placeholder="you@example.com">
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" required placeholder="••••••••">
+                </div>
+                <button type="submit" class="btn btn-primary" id="login-btn" style="width: 100%; margin-top: 10px;">
+                    Sign In
+                </button>
+            </form>
+
+            <div id="login-message" class="login-message"></div>
+
+            <div class="login-footer">
+                Don't have an account? <a href="#" id="signup-link">Sign up</a>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Supabase configuration - Replace these with your actual Supabase project keys
+        const SUPABASE_URL = 'https://YOUR_SUPABASE_PROJECT_ID.supabase.co';
+        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+        
+        let supabaseClient;
+        try {
+            // Using the global supabase object from the CDN script
+            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        } catch (e) {
+            console.warn("Supabase client failed to initialize. Please update your credentials.", e);
+        }
+
+        const loginForm = document.getElementById('login-form');
+        const loginMessage = document.getElementById('login-message');
+        const loginBtn = document.getElementById('login-btn');
+        const signupLink = document.getElementById('signup-link');
+
+        function showMessage(msg, isError = false) {
+            loginMessage.textContent = msg;
+            loginMessage.className = 'login-message ' + (isError ? 'error' : 'success');
+            loginMessage.style.display = 'block';
+        }
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!supabaseClient || SUPABASE_URL.includes('YOUR_SUPABASE')) {
+                showMessage('Supabase credentials are not configured in login.html.', true);
+                return;
+            }
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'Signing in...';
+
+            const { data, error } = await supabaseClient.auth.signInWithPassword({
+                email,
+                password
+            });
+
+            loginBtn.disabled = false;
+            loginBtn.textContent = 'Sign In';
+
+            if (error) {
+                showMessage(error.message, true);
+            } else {
+                showMessage('Successfully signed in! Redirecting...', false);
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1000);
+            }
+        });
+
+        signupLink.addEventListener('click', async (e) => {
+            e.preventDefault();
+            
+            if (!supabaseClient || SUPABASE_URL.includes('YOUR_SUPABASE')) {
+                showMessage('Supabase credentials are not configured in login.html.', true);
+                return;
+            }
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            if (!email || !password) {
+                showMessage('Please enter an email and password to sign up.', true);
+                return;
+            }
+
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'Signing up...';
+
+            const { data, error } = await supabaseClient.auth.signUp({
+                email,
+                password
+            });
+
+            loginBtn.disabled = false;
+            loginBtn.textContent = 'Sign In';
+
+            if (error) {
+                showMessage(error.message, true);
+            } else {
+                if (data?.user?.identities?.length === 0) {
+                     showMessage('Account already exists. Please sign in.', true);
+                } else {
+                     showMessage('Check your email for the confirmation link!', false);
+                }
+            }
+        });
+    </script>
+</body>
+</html>
