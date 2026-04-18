@@ -716,3 +716,44 @@
         .login-footer a:hover {
             text-decoration: underline;
         }
+
+        /* Dark Theme Overrides */
+        :root {
+            --bg-body: #f9f9f7;
+            --bg-surface: #fff;
+        }
+
+        [data-theme="dark"] {
+            --green: #7fd63a;
+            --green-light: #1e330a;
+            --green-mid: #97c459;
+            --red: #f26666;
+            --red-light: #4a1515;
+            --amber: #fac775;
+            --amber-light: #402402;
+            --gray-100: #2c2c2a;
+            --gray-200: #3a3a37;
+            --gray-400: #5f5e5a;
+            --gray-600: #b4b2a9;
+            --gray-800: #f5f5f3;
+            --border: 1px solid #3a3a37;
+            --bg-body: #1a1a18;
+            --bg-surface: #242422;
+        }
+
+        body {
+            background: var(--bg-body);
+        }
+
+        header, .city-bar, .camera-card, .camera-actions, .btn-secondary, .result-card, .item-chip, .legend-card, .login-card {
+            background: var(--bg-surface) !important;
+        }
+
+        .form-group input {
+            background: var(--gray-100) !important;
+            color: var(--gray-800) !important;
+        }
+
+        .form-group input:focus {
+            background: var(--bg-surface) !important;
+        }
