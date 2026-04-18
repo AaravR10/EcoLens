@@ -189,6 +189,20 @@ const ITEMS = [
                     });
                     const data = await res.json();
                     hideLoading();
+                    
+                    if (data && data.success) {
+                        const history = JSON.parse(localStorage.getItem('scanHistory') || '[]');
+                        const fallbackItem = ITEMS.find(i => data.material && data.material.toLowerCase().includes(i.material.toLowerCase()));
+                        history.unshift({
+                            timestamp: new Date().toISOString(),
+                            material: data.material.split(',')[0].toUpperCase(),
+                            icon: fallbackItem ? fallbackItem.icon : '🔍',
+                            confidence: Math.round((data.confidence || conf) * 100) + '%',
+                            verdict: data.rules && data.rules.recyclable ? 'Recycle' : 'Trash'
+                        });
+                        localStorage.setItem('scanHistory', JSON.stringify(history.slice(0, 50)));
+                    }
+                    
                     showResult(data);
                 } else {
                     hideLoading();
