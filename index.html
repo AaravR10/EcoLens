@@ -9,6 +9,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.0/dist/mobilenet.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         *,
         *::before,
@@ -746,6 +748,16 @@
             </div>
         </div>
 
+        <!-- Map Section -->
+        <div class="section-heading" id="map-heading" style="display:none; margin-top:20px;">Nearby Drop-off Locations</div>
+        <div id="map-container" style="display:none; height: 300px; border-radius: var(--radius); border: var(--border); overflow: hidden; margin-bottom: 20px; position: relative;">
+            <div id="map" style="width: 100%; height: 100%; z-index: 1;"></div>
+            <div id="map-loading" class="loading-overlay" style="z-index: 2; border-radius: var(--radius);">
+                <div class="spinner"></div>
+                <div class="loading-text">Finding locations...</div>
+            </div>
+        </div>
+
         <!-- Quick Item Selector -->
         <div class="section-heading">Try a sample item</div>
         <div class="items-grid" id="items-grid">
@@ -884,6 +896,9 @@
         let model = null;
         let stream = null;
         let cameraActive = false;
+        let currentPos = null;
+        let map = null;
+        let markersLayer = null;
 
         async function loadModel() {
             try {
@@ -962,6 +977,82 @@
             }).join('');
 
             document.getElementById('city-verdicts').innerHTML = yourCityRow + otherRows;
+            
+            updateMap(item);
+        }
+
+        async function updateMap(item) {
+            if (!currentPos || !item) {
+                document.getElementById('map-heading').style.display = 'none';
+                document.getElementById('map-container').style.display = 'none';
+                return;
+            }
+            
+            document.getElementById('map-heading').style.display = 'block';
+            document.getElementById('map-container').style.display = 'block';
+            document.getElementById('map-loading').style.display = 'flex';
+            
+            if (!map) {
+                map = L.map('map').setView([currentPos.lat, currentPos.lng], 13);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; OpenStreetMap contributors'
+                }).addTo(map);
+                markersLayer = L.layerGroup().addTo(map);
+            } else {
+                map.setView([currentPos.lat, currentPos.lng], 13);
+            }
+            
+            markersLayer.clearLayers();
+            setTimeout(() => map.invalidateSize(), 100);
+            
+            L.marker([currentPos.lat, currentPos.lng], {
+                icon: L.divIcon({
+                    className: 'user-marker',
+                    html: '<div style="background:#3B6D11;width:14px;height:14px;border-radius:50%;border:2px solid white;box-shadow:0 0 4px rgba(0,0,0,0.5);"></div>',
+                    iconSize: [18, 18],
+                    iconAnchor: [9, 9]
+                })
+            }).addTo(markersLayer).bindPopup('You are here');
+
+            const query = `[out:json];(node["amenity"="recycling"](around:5000,${currentPos.lat},${currentPos.lng});way["amenity"="recycling"](around:5000,${currentPos.lat},${currentPos.lng}););out center;`;
+            const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
+            
+            try {
+                const res = await fetch(url);
+                const data = await res.json();
+                const locations = data.elements || [];
+                
+                locations.forEach(loc => {
+                    const lat = loc.lat || loc.center?.lat;
+                    const lon = loc.lon || loc.center?.lon;
+                    if (!lat || !lon) return;
+                    
+                    const tags = loc.tags || {};
+                    const name = tags.name || 'Recycling Drop-off';
+                    
+                    let accepts = [];
+                    for (const [k, v] of Object.entries(tags)) {
+                        if (k.startsWith('recycling:') && v === 'yes') {
+                            accepts.push(k.replace('recycling:', ''));
+                        }
+                    }
+                    
+                    let acceptsText = accepts.length > 0 ? accepts.join(', ') : 'Mixed recyclables';
+                    
+                    const recycleIcon = L.divIcon({
+                        className: 'custom-recycle-icon',
+                        html: '<div style="background:var(--green-mid);width:20px;height:20px;border-radius:50%;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" style="width:12px;height:12px;"><path d="M21 4H8l-7 8 7 8h13a2 2 0 002-2V6a2 2 0 00-2-2z"/></svg></div>',
+                        iconSize: [24, 24],
+                        iconAnchor: [12, 12]
+                    });
+                    
+                    L.marker([lat, lon], { icon: recycleIcon }).addTo(markersLayer).bindPopup(`<b>${name}</b><br/>Accepts: ${acceptsText}`);
+                });
+            } catch(e) {
+                console.error("Error fetching map data", e);
+            }
+            
+            document.getElementById('map-loading').style.display = 'none';
         }
 
         function showLoading(text) {
@@ -1293,6 +1384,7 @@
             badge.textContent = 'Locating...';
             navigator.geolocation.getCurrentPosition(async (pos) => {
                 const { latitude: lat, longitude: lng } = pos.coords;
+                currentPos = { lat, lng };
                 try {
                     const res = await fetch(
                         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10&addressdetails=1`,
@@ -1316,6 +1408,7 @@
         }
 
         function fallbackGeoDetect(lat, lng) {
+            currentPos = { lat, lng };
             const regions = [
                 { state: 'WA', city: 'seattle', latMin: 45.5, latMax: 49, lngMin: -125, lngMax: -116 },
                 { state: 'OR', city: 'portland', latMin: 42, latMax: 46, lngMin: -124.5, lngMax: -116.5 },
