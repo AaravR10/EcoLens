@@ -1,12 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EcoCity — Build Your Green Future</title>
+    <title>EcoWorld — Build Your Green Future</title>
     <meta name="description" content="Build a sustainable city using recycled resources from EcoLens scans.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&family=Outfit:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
     <script type="importmap">
@@ -18,7 +21,9 @@
     }
     </script>
     <style>
-        *, *::before, *::after {
+        *,
+        *::before,
+        *::after {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
@@ -49,7 +54,8 @@
             --font-main: 'Outfit', 'Ubuntu', sans-serif;
         }
 
-        html, body {
+        html,
+        body {
             width: 100%;
             height: 100%;
             overflow: hidden;
@@ -73,24 +79,29 @@
         /* ─── HUD Layer ─── */
         #hud {
             position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
             z-index: 10;
             pointer-events: none;
         }
 
-        #hud > * {
+        #hud>* {
             pointer-events: auto;
         }
 
         /* ─── Top Bar ─── */
         .top-bar {
             position: absolute;
-            top: 0; left: 0; right: 0;
+            top: 0;
+            left: 0;
+            right: 0;
             display: flex;
             align-items: center;
             justify-content: space-between;
             padding: 12px 18px;
-            background: linear-gradient(180deg, rgba(6,8,4,0.85) 0%, transparent 100%);
+            background: linear-gradient(180deg, rgba(6, 8, 4, 0.85) 0%, transparent 100%);
         }
 
         .top-left {
@@ -146,8 +157,15 @@
         }
 
         @keyframes shimmer {
-            0%, 100% { background-position: 0% center; }
-            50% { background-position: 200% center; }
+
+            0%,
+            100% {
+                background-position: 0% center;
+            }
+
+            50% {
+                background-position: 200% center;
+            }
         }
 
         .game-title .eco-badge {
@@ -185,7 +203,9 @@
         .eco-points-display::before {
             content: '';
             position: absolute;
-            top: 0; left: 0; right: 0;
+            top: 0;
+            left: 0;
+            right: 0;
             height: 1px;
             background: linear-gradient(90deg, transparent, var(--green-glow), transparent);
             opacity: 0.4;
@@ -205,8 +225,15 @@
         }
 
         @keyframes pulse-glow {
-            0%, 100% { box-shadow: 0 0 12px rgba(127, 214, 58, 0.3); }
-            50% { box-shadow: 0 0 20px rgba(127, 214, 58, 0.5); }
+
+            0%,
+            100% {
+                box-shadow: 0 0 12px rgba(127, 214, 58, 0.3);
+            }
+
+            50% {
+                box-shadow: 0 0 20px rgba(127, 214, 58, 0.5);
+            }
         }
 
         .ep-info {
@@ -293,7 +320,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: rgba(255,255,255,0.05);
+            background: rgba(255, 255, 255, 0.05);
             border-radius: 6px;
             flex-shrink: 0;
         }
@@ -349,7 +376,7 @@
             flex: 0 0 auto;
             width: 120px;
             padding: 10px;
-            background: rgba(255,255,255,0.04);
+            background: rgba(255, 255, 255, 0.04);
             border: 1px solid rgba(99, 153, 34, 0.15);
             border-radius: 10px;
             cursor: pointer;
@@ -380,7 +407,7 @@
 
         .building-card.locked:hover {
             transform: none;
-            background: rgba(255,255,255,0.04);
+            background: rgba(255, 255, 255, 0.04);
             border-color: rgba(99, 153, 34, 0.15);
         }
 
@@ -489,7 +516,7 @@
             backdrop-filter: blur(16px);
             animation: toast-in 0.3s ease-out, toast-out 0.3s ease-in 2.2s forwards;
             white-space: nowrap;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
         }
 
         .toast.success {
@@ -503,19 +530,35 @@
         }
 
         @keyframes toast-in {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         @keyframes toast-out {
-            from { opacity: 1; }
-            to { opacity: 0; transform: translateY(-10px); }
+            from {
+                opacity: 1;
+            }
+
+            to {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
         }
 
         /* ─── Loading Screen ─── */
         .loading-screen {
             position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
             background: #0a0d06;
             display: flex;
             flex-direction: column;
@@ -581,8 +624,15 @@
         }
 
         @keyframes bounce-soft {
-            0%, 100% { transform: translateX(-50%) translateY(0); }
-            50% { transform: translateX(-50%) translateY(-4px); }
+
+            0%,
+            100% {
+                transform: translateX(-50%) translateY(0);
+            }
+
+            50% {
+                transform: translateX(-50%) translateY(-4px);
+            }
         }
 
         /* ─── Controls Help ─── */
@@ -601,8 +651,8 @@
         .controls-help kbd {
             display: inline-block;
             padding: 1px 5px;
-            background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 3px;
             font-family: var(--font-main);
             font-size: 10px;
@@ -633,7 +683,9 @@
 
         /* ─── Responsive ─── */
         @media (max-width: 768px) {
-            .resources-panel, .info-panel {
+
+            .resources-panel,
+            .info-panel {
                 display: none;
             }
 
@@ -684,10 +736,14 @@
         }
     </style>
 </head>
+
 <body>
     <!-- Loading Screen -->
     <div class="loading-screen" id="loading-screen">
-        <div class="loading-logo">🌿 EcoCity</div>
+        <div class="loading-logo" style="display:flex; align-items:center; gap:10px;">
+            <img src="../assets/ecoworldicon.png" alt="EcoWorld Icon" style="height: 48px; width:auto; object-fit:contain;">
+            <img src="../assets/ecoworldtext.png" alt="EcoWorld" style="height: 38px; width:auto; object-fit:contain;">
+        </div>
         <div class="loading-bar-track">
             <div class="loading-bar-fill" id="loading-bar"></div>
         </div>
@@ -702,12 +758,15 @@
         <!-- Top Bar -->
         <div class="top-bar">
             <div class="top-left">
-                <a href="../ecolens-frontend/public/index.html" class="btn-back" id="btn-back">
-                    <svg viewBox="0 0 24 24" fill="none"><path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    EcoLens
+                <a href="../index.html" class="btn-back" id="btn-back">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                    </svg>
+                    <img src="../assets/ecolenstext.png" alt="EcoLens" style="height: 14px; width:auto; margin-left:2px;">
                 </a>
                 <div class="game-title">
-                    <h1>EcoCity</h1>
+                    <img src="../assets/ecoworldtext.png" alt="EcoWorld" style="height: 22px; width:auto; object-fit:contain;">
                     <span class="eco-badge">Beta</span>
                 </div>
             </div>
@@ -772,7 +831,7 @@
 
         <!-- Login Prompt -->
         <div class="login-prompt" id="login-prompt">
-            ⚠️ Playing in demo mode. <a href="../ecolens-frontend/public/login.html">Login</a> to sync your scans!
+            ⚠️ Playing in demo mode. <a href="/login.html">Login</a> to sync your scans!
         </div>
 
         <!-- Controls -->
@@ -785,4 +844,5 @@
 
     <script type="module" src="game.js"></script>
 </body>
+
 </html>
