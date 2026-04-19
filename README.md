@@ -1,6 +1,6 @@
-Welcome to EcoLeap, a small program created by four high school students for the OSCEFHacks 2026 hackathon competition!
+Welcome to EcoLens, a small program created by four high school students for the OSCEFHacks 2026 hackathon competition!
 
-EcoLeap is a simple website with a simple purpose in mind: to identify if what we think is recyclable is actually recyclable.
+EcoLens is a simple website with a simple purpose in mind: to identify if what we think is recyclable is actually recyclable.
 
 After all, cardboard is recyclable, but if it's in a greasy, oily state, do those words stay true?
 
