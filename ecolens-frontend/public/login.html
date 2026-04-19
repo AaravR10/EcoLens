@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Login - EcoLens</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="styles.css">
+    <script>
+        // Apply theme early to prevent flash of unstyled content
+        const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        if (savedTheme === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+        }
+    </script>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <a href="index.html" style="text-decoration: none; display: flex; align-items: center; gap: 10px;">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 3C8 3 4 6 4 10c0 5 8 11 8 11s8-6 8-11c0-4-4-7-8-7z" fill="#3B6D11" opacity="0.15" />
+                        <path d="M9 12l2 2 4-4" stroke="#3B6D11" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        <circle cx="12" cy="12" r="8" stroke="#3B6D11" stroke-width="1.5" fill="none" />
+                        <path d="M4 12h-2M20 12h2M12 4V2M12 20v2" stroke="#3B6D11" stroke-width="1.5" stroke-linecap="round" opacity="0.5" />
+                    </svg>
+                </div>
+                <span class="logo-name">EcoLens</span>
+            </a>
+        </div>
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <button id="theme-toggle" class="btn btn-secondary" style="padding: 6px; font-size: 13px; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;" aria-label="Toggle dark mode">
+                <svg id="theme-icon-moon" viewBox="0 0 24 24" fill="none" style="width: 16px; height: 16px;">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+                <svg id="theme-icon-sun" viewBox="0 0 24 24" fill="none" style="width: 16px; height: 16px; display: none;">
+                    <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></circle>
+                    <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <main class="login-main">
+        <div class="login-card">
+            <h1 class="login-title">Welcome Back</h1>
+            <p class="login-subtitle">Sign in to your EcoLens account</p>
+
+            <form id="login-form">
+                <div class="form-group" id="username-group" style="display: none;">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" placeholder="your_username">
+                </div>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" required placeholder="you@example.com">
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" required placeholder="••••••••">
+                </div>
+                <button type="submit" class="btn btn-primary" id="login-btn" style="width: 100%; margin-top: 10px;">
+                    Sign In
+                </button>
+            </form>
+
+            <div id="login-message" class="login-message"></div>
+
+            <div class="login-footer">
+                Don't have an account? <a href="#" id="signup-link">Sign up</a>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Supabase configuration - Replace these with your actual Supabase project keys
+        const SUPABASE_URL = 'https://yjfmwtgeasenmghjwjij.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlqZm13dGdlYXNlbm1naGp3amlqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NDg4ODUsImV4cCI6MjA5MjEyNDg4NX0.IHb1Z2RkwuCX9H0LHO0DJygSxyeB3_iqUJaivAao86I';
+        
+        let supabaseClient;
+        try {
+            // Using the global supabase object from the CDN script
+            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        } catch (e) {
+            console.warn("Supabase client failed to initialize. Please update your credentials.", e);
+        }
+
+        const loginForm = document.getElementById('login-form');
+        const loginMessage = document.getElementById('login-message');
+        const loginBtn = document.getElementById('login-btn');
+        const signupLink = document.getElementById('signup-link');
+
+        function showMessage(msg, isError = false) {
+            loginMessage.textContent = msg;
+            loginMessage.className = 'login-message ' + (isError ? 'error' : 'success');
+            loginMessage.style.display = 'block';
+        }
+
+        let isSignupMode = false;
+        const usernameGroup = document.getElementById('username-group');
+        const loginTitle = document.querySelector('.login-title');
+        const loginSubtitle = document.querySelector('.login-subtitle');
+
+        signupLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            isSignupMode = !isSignupMode;
+            if (isSignupMode) {
+                usernameGroup.style.display = 'block';
+                loginTitle.textContent = 'Create Account';
+                loginSubtitle.textContent = 'Join EcoLens to track your scans';
+                loginBtn.textContent = 'Sign Up';
+                signupLink.innerHTML = "Already have an account? <b>Log in</b>";
+            } else {
+                usernameGroup.style.display = 'none';
+                loginTitle.textContent = 'Welcome Back';
+                loginSubtitle.textContent = 'Sign in to your EcoLens account';
+                loginBtn.textContent = 'Sign In';
+                signupLink.innerHTML = "Don't have an account? <b>Sign up</b>";
+            }
+            loginMessage.style.display = 'none';
+        });
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!supabaseClient) {
+                showMessage('Supabase client failed to initialize.', true);
+                return;
+            }
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const username = document.getElementById('username').value;
+            
+            loginBtn.disabled = true;
+            loginBtn.textContent = isSignupMode ? 'Signing up...' : 'Signing in...';
+
+            if (isSignupMode) {
+                if (!username) {
+                    showMessage('Please enter a username to sign up.', true);
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = 'Sign Up';
+                    return;
+                }
+                const { data, error } = await supabaseClient.auth.signUp({
+                    email,
+                    password,
+                    options: { data: { username } }
+                });
+                
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Sign Up';
+
+                if (error) {
+                    showMessage(error.message, true);
+                } else {
+                    if (data?.user?.identities?.length === 0) {
+                        showMessage('Account already exists. Please sign in.', true);
+                    } else if (data.session) {
+                        showMessage('Account created successfully! Logging you in...', false);
+                        setTimeout(() => {
+                            window.location.href = 'index.html';
+                        }, 1000);
+                    } else {
+                        showMessage('Account created successfully! Logging you in...', false);
+                        setTimeout(() => {
+                            window.location.href = 'index.html';
+                        }, 1300);
+                    }
+                }
+            } else {
+                const { data, error } = await supabaseClient.auth.signInWithPassword({
+                    email,
+                    password
+                });
+
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Sign In';
+
+                if (error) {
+                    showMessage(error.message, true);
+                } else {
+                    showMessage('Successfully signed in! Redirecting...', false);
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 1000);
+                }
+            }
+        });
+        
+        // Theme toggle logic
+        document.addEventListener('DOMContentLoaded', () => {
+            const toggleBtn = document.getElementById('theme-toggle');
+            const iconMoon = document.getElementById('theme-icon-moon');
+            const iconSun = document.getElementById('theme-icon-sun');
+            
+            function updateIcons() {
+                const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                if (isDark) {
+                    iconMoon.style.display = 'none';
+                    iconSun.style.display = 'block';
+                } else {
+                    iconMoon.style.display = 'block';
+                    iconSun.style.display = 'none';
+                }
+            }
+            
+            // Initial icon state
+            updateIcons();
+            
+            toggleBtn.addEventListener('click', () => {
+                const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                const newTheme = isDark ? 'light' : 'dark';
+                
+                if (newTheme === 'dark') {
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                } else {
+                    document.documentElement.removeAttribute('data-theme');
+                }
+                
+                localStorage.setItem('theme', newTheme);
+                updateIcons();
+            });
+        });
+    </script>
+</body>
+</html>

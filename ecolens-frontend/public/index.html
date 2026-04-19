@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>EcoLens — Smart Recycling Guide</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="styles.css">
+    <script>
+        // Apply theme early to prevent flash of unstyled content
+        const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        if (savedTheme === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+        }
+    </script>
+</head>
+
+<body>
+
+    <header>
+        <div class="logo">
+            <div class="logo-icon">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 3C8 3 4 6 4 10c0 5 8 11 8 11s8-6 8-11c0-4-4-7-8-7z" fill="#3B6D11" opacity="0.15" />
+                    <path d="M9 12l2 2 4-4" stroke="#3B6D11" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                    <circle cx="12" cy="12" r="8" stroke="#3B6D11" stroke-width="1.5" fill="none" />
+                    <path d="M4 12h-2M20 12h2M12 4V2M12 20v2" stroke="#3B6D11" stroke-width="1.5" stroke-linecap="round"
+                        opacity="0.5" />
+                </svg>
+            </div>
+            <span class="logo-name">EcoLens</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <div class="location-badge" id="gps-badge">
+                <svg viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="3" fill="#3B6D11" />
+                    <path d="M12 2v2M12 20v2M2 12h2M20 12h2" stroke="#3B6D11" stroke-width="2" stroke-linecap="round" />
+                </svg>
+                <span id="gps-text">Detecting...</span>
+            </div>
+            
+            <a href="history.html" style="color: var(--green); text-decoration: none; display: flex; align-items: center; padding: 6px;" aria-label="History">
+                <svg viewBox="0 0 24 24" fill="none" style="width: 20px; height: 20px;">
+                    <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </a>
+
+            <button id="theme-toggle" class="btn btn-secondary" style="padding: 6px; font-size: 13px; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;" aria-label="Toggle dark mode">
+                <svg id="theme-icon-moon" viewBox="0 0 24 24" fill="none" style="width: 16px; height: 16px;">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+                <svg id="theme-icon-sun" viewBox="0 0 24 24" fill="none" style="width: 16px; height: 16px; display: none;">
+                    <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></circle>
+                    <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+            </button>
+
+            <button id="settings-btn" class="btn btn-secondary" style="padding: 6px; font-size: 13px; border-radius: 50%; width: 32px; height: 32px; display: none; align-items: center; justify-content: center; flex-shrink: 0;" aria-label="Settings">
+                <svg viewBox="0 0 24 24" fill="none" style="width: 16px; height: 16px;">
+                    <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></circle>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+            </button>
+            <a href="login.html" class="btn btn-primary" style="padding: 6px 12px; font-size: 13px; text-decoration: none;" id="auth-btn">Login</a>
+        </div>
+    </header>
+
+    <div id="settings-modal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center;">
+        <div style="background:var(--bg-surface); padding:24px; border-radius:var(--radius); width:90%; max-width:400px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+            <h2 style="margin-top:0; color:var(--gray-800);">Settings</h2>
+            <hr style="border:0; border-top:1px solid var(--border); margin-bottom: 20px;">
+            <p style="font-size: 14px; color: var(--gray-600);">Manage your EcoLens account.</p>
+            <button id="delete-account-btn" class="btn btn-secondary" style="width:100%; color:#a32d2d; margin-top:10px; border-color: #fcebeb; background: #fcebeb; font-weight:700;">Delete My Account</button>
+            <button onclick="document.getElementById('settings-modal').style.display='none'" class="btn btn-secondary" style="width:100%; margin-top:15px;">Close</button>
+        </div>
+    </div>
+
+    <div class="city-bar">
+        <label for="state-select">State:</label>
+        <select id="state-select">
+            <option value="">— Select state —</option>
+        </select>
+        <label for="city-select" style="margin-left:4px;">City:</label>
+        <select id="city-select" disabled>
+            <option value="">— Select city —</option>
+        </select>
+    </div>
+
+    <main>
+
+        <!-- Tip Banner -->
+        <div class="tip-banner">
+            <svg viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="9" stroke="#854F0B" stroke-width="1.5" />
+                <path d="M12 8v4M12 16h.01" stroke="#854F0B" stroke-width="2" stroke-linecap="round" />
+            </svg>
+            <span><strong>Wish-cycling alert:</strong> Over 25% of recycling is contaminated by items that don't belong.
+                Point your camera at an item to get local guidance before tossing.</span>
+        </div>
+
+        <!-- Camera Card -->
+        <div class="camera-card">
+            <div class="camera-viewport" id="viewport">
+                <video id="video-el" autoplay playsinline muted></video>
+                <canvas id="img-preview"></canvas>
+                <div class="scan-ring" id="scan-ring"></div>
+                <div class="scan-line" id="scan-line"></div>
+                <div class="loading-overlay" id="loading-overlay">
+                    <div class="spinner"></div>
+                    <div class="loading-text" id="loading-text">Analyzing item...</div>
+                </div>
+                <div class="camera-placeholder" id="cam-placeholder">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"
+                            stroke="white" stroke-width="1.5" stroke-linejoin="round" />
+                        <circle cx="12" cy="13" r="4" stroke="white" stroke-width="1.5" />
+                    </svg>
+                    <p>Use your camera or upload a photo to identify recyclability</p>
+                </div>
+            </div>
+            <div class="camera-actions">
+                <button class="btn btn-primary" id="btn-camera">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"
+                            stroke="white" stroke-width="1.5" stroke-linejoin="round" />
+                        <circle cx="12" cy="13" r="4" stroke="white" stroke-width="1.5" />
+                    </svg>
+                    Open Camera
+                </button>
+                <button class="btn btn-secondary" id="btn-upload">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="currentColor"
+                            stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    Upload Photo
+                </button>
+                <input type="file" id="upload-input" accept="image/*" capture="environment">
+                <button class="btn btn-secondary" id="btn-snap" style="display:none;">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.5" />
+                        <circle cx="12" cy="12" r="3" fill="currentColor" />
+                    </svg>
+                    Scan
+                </button>
+            </div>
+        </div>
+
+        <!-- Result Card -->
+        <div class="result-card" id="result-card">
+            <div class="result-header">
+                <div class="result-icon" id="result-icon"></div>
+                <div>
+                    <div class="result-title" id="result-title">—</div>
+                    <div class="result-subtitle" id="result-subtitle">—</div>
+                </div>
+            </div>
+            <div class="result-body">
+                <p id="result-tip"></p>
+                <div class="city-verdicts" id="city-verdicts"></div>
+                <div class="confidence-bar-wrap">
+                    <div class="confidence-label">Detection confidence: <span id="conf-pct">—</span></div>
+                    <div class="confidence-bar">
+                        <div class="confidence-fill" id="conf-fill" style="width:0%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Map Section -->
+        <div class="section-heading" id="map-heading" style="display:none; margin-top:20px;">Nearby Drop-off Locations
+        </div>
+        <div id="map-container"
+            style="display:none; height: 300px; border-radius: var(--radius); border: var(--border); overflow: hidden; margin-bottom: 20px; position: relative;">
+            <div id="map" style="width: 100%; height: 100%; z-index: 1;"></div>
+            <div id="map-loading" class="loading-overlay" style="z-index: 2; border-radius: var(--radius);">
+                <div class="spinner"></div>
+                <div class="loading-text">Finding locations...</div>
+            </div>
+        </div>
+
+        <!-- Quick Item Selector -->
+        <div class="section-heading">Try a sample item</div>
+        <div class="items-grid" id="items-grid">
+            <!-- populated by JS -->
+        </div>
+
+        <!-- Legend -->
+        <div class="section-heading">Legend</div>
+        <div class="legend-card">
+            <div class="legend-row">
+                <div class="legend-dot" style="background:#639922;"></div> <strong>Recycle</strong> — accepted in
+                curbside bin
+            </div>
+            <div class="legend-row">
+                <div class="legend-dot" style="background:#A32D2D;"></div> <strong>Trash</strong> — do not put in
+                recycling
+            </div>
+            <div class="legend-row">
+                <div class="legend-dot" style="background:#854F0B;"></div> <strong>Depends</strong> — drop-off or
+                special conditions required
+            </div>
+            <div class="legend-row">
+                <div class="legend-dot" style="background:#b4b2a9;"></div> <strong>Compost</strong> — food waste /
+                organics bin where available
+            </div>
+        </div>
+
+    </main>
+
+    <footer>
+        EcoLens uses TensorFlow.js MobileNet for on-device image recognition.<br>
+        Recycling rules sourced from municipal waste management APIs. Data current as of 2025.<br>
+        <span style="color:#b4b2a9;">Built for SDG 12.8 — Sustainable Consumption</span>
+    </footer>
+
+    <script src="app.js"></script>
+
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-analytics.js";
+        // TODO: Add SDKs for Firebase products that you want to use
+        // https://firebase.google.com/docs/web/setup#available-libraries
+
+        // Your web app's Firebase configuration
+        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+        const firebaseConfig = {
+            apiKey: "AIzaSyCLr-M6SUqUr8deZMHNiNL13yXm8kqjSNc",
+            authDomain: "eco--leap.firebaseapp.com",
+            projectId: "eco--leap",
+            storageBucket: "eco--leap.firebasestorage.app",
+            messagingSenderId: "858044546642",
+            appId: "1:858044546642:web:ce2916aa77d55dc126e98b",
+            measurementId: "G-WL5F24TBZ8"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+    </script>
+    
+    <script>
+        // Theme toggle logic
+        document.addEventListener('DOMContentLoaded', () => {
+            const toggleBtn = document.getElementById('theme-toggle');
+            const iconMoon = document.getElementById('theme-icon-moon');
+            const iconSun = document.getElementById('theme-icon-sun');
+            
+            function updateIcons() {
+                const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                if (isDark) {
+                    iconMoon.style.display = 'none';
+                    iconSun.style.display = 'block';
+                } else {
+                    iconMoon.style.display = 'block';
+                    iconSun.style.display = 'none';
+                }
+            }
+            
+            // Initial icon state
+            updateIcons();
+            
+            toggleBtn.addEventListener('click', () => {
+                const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                const newTheme = isDark ? 'light' : 'dark';
+                
+                if (newTheme === 'dark') {
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                } else {
+                    document.documentElement.removeAttribute('data-theme');
+                }
+                
+                localStorage.setItem('theme', newTheme);
+                updateIcons();
+            });
+        });
+    </script>
+</body>
+
+</html>
