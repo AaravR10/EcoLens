@@ -11,4 +11,4 @@ And to make things even better, we can pinpoint you to the closest location to y
 You can find our project at: ecoleap0.web.app
 
 
-Created by 4 bums: Aarav, Abhi, Ezra, & Suyash
+Created by 4 people: Aarav, Abhi, Ezra, & Suyash
