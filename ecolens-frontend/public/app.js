@@ -68,7 +68,8 @@ const ITEMS = [
         let cameraActive = false;
         let currentPos = null;
         let map = null;
-        let markersLayer = null;
+        let markersArray = [];
+        let placesService = null;
 
         async function loadModel() {
             try {
@@ -144,79 +145,91 @@ const ITEMS = [
             document.getElementById('map-container').style.display = 'block';
             document.getElementById('map-loading').style.display = 'flex';
 
+            const { Map } = await google.maps.importLibrary("maps");
+            const { AdvancedMarkerElement, PinElement } = await google.maps.importLibrary("marker");
+            const { Place } = await google.maps.importLibrary("places");
+            
+            const location = new google.maps.LatLng(currentPos.lat, currentPos.lng);
+
             if (!map) {
-                map = L.map('map').setView([currentPos.lat, currentPos.lng], 13);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '&copy; OpenStreetMap contributors'
-                }).addTo(map);
-                markersLayer = L.layerGroup().addTo(map);
+                map = new Map(document.getElementById('map'), {
+                    center: location,
+                    zoom: 13,
+                    mapId: 'ECOLENS_MAP_ID', // Required for AdvancedMarkerElement
+                    mapTypeControl: false,
+                    streetViewControl: false
+                });
             } else {
-                map.setView([currentPos.lat, currentPos.lng], 13);
+                map.setCenter(location);
             }
 
-            markersLayer.clearLayers();
-            setTimeout(() => map.invalidateSize(), 100);
+            // Clear previous markers
+            markersArray.forEach(marker => marker.map = null);
+            markersArray = [];
 
-            L.marker([currentPos.lat, currentPos.lng], {
-                icon: L.divIcon({
-                    className: 'user-marker',
-                    html: '<div style="background:#3B6D11;width:14px;height:14px;border-radius:50%;border:2px solid white;box-shadow:0 0 4px rgba(0,0,0,0.5);"></div>',
-                    iconSize: [18, 18],
-                    iconAnchor: [9, 9]
-                })
-            }).addTo(markersLayer).bindPopup('You are here');
+            // Add user location marker
+            const userPin = new PinElement({
+                background: '#3B6D11',
+                borderColor: 'white',
+                glyphColor: 'white'
+            });
 
-            const query = `[out:json];(node["amenity"="recycling"](around:50000,${currentPos.lat},${currentPos.lng});way["amenity"="recycling"](around:50000,${currentPos.lat},${currentPos.lng});relation["amenity"="recycling"](around:50000,${currentPos.lat},${currentPos.lng}););out center;`;
-            const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
+            const userMarker = new AdvancedMarkerElement({
+                position: location,
+                map: map,
+                content: userPin,
+                title: 'You are here'
+            });
+            markersArray.push(userMarker);
 
+            // Search for "recycling"
             try {
-                const res = await fetch(url);
-                const data = await res.json();
-                let locations = data.elements || [];
+                const request = {
+                    textQuery: 'recycling',
+                    fields: ['displayName', 'location', 'formattedAddress'],
+                    locationBias: {
+                        radius: 20000,
+                        center: location
+                    }
+                };
 
-                if (locations.length === 0) {
-                    locations.push({
-                        lat: currentPos.lat + 0.01,
-                        lon: currentPos.lng + 0.01,
-                        tags: { name: 'Local Recycling Center', 'recycling:paper': 'yes', 'recycling:glass': 'yes', 'recycling:plastic': 'yes' }
-                    });
-                    locations.push({
-                        lat: currentPos.lat - 0.015,
-                        lon: currentPos.lng + 0.005,
-                        tags: { name: 'City Drop-off', 'recycling:cans': 'yes', 'recycling:cardboard': 'yes' }
+                const { places } = await Place.searchByText(request);
+
+                if (places && places.length > 0) {
+                    places.forEach(place => {
+                        const pin = new PinElement({
+                            background: '#639922',
+                            borderColor: 'white',
+                            glyphColor: 'white'
+                        });
+
+                        const displayNameStr = place.displayName ? place.displayName.text || place.displayName : 'Recycling Center';
+
+                        const marker = new AdvancedMarkerElement({
+                            map: map,
+                            position: place.location,
+                            content: pin,
+                            title: displayNameStr
+                        });
+                        
+                        const infoWindow = new google.maps.InfoWindow({
+                            content: `<div style="color: black;"><b>${displayNameStr}</b><br/>${place.formattedAddress || ''}</div>`
+                        });
+                        
+                        marker.addListener('click', () => {
+                            infoWindow.open({
+                                anchor: marker,
+                                map,
+                            });
+                        });
+                        
+                        markersArray.push(marker);
                     });
                 }
-
-                locations.forEach(loc => {
-                    const lat = loc.lat || loc.center?.lat;
-                    const lon = loc.lon || loc.center?.lon;
-                    if (!lat || !lon) return;
-
-                    const tags = loc.tags || {};
-                    const name = tags.name || 'Recycling Drop-off';
-
-                    let accepts = [];
-                    for (const [k, v] of Object.entries(tags)) {
-                        if (k.startsWith('recycling:') && v === 'yes') {
-                            accepts.push(k.replace('recycling:', ''));
-                        }
-                    }
-
-                    let acceptsText = accepts.length > 0 ? accepts.join(', ') : 'Mixed recyclables';
-
-                    const recycleIcon = L.divIcon({
-                        className: 'custom-recycle-icon',
-                        html: '<div style="background:var(--green-mid);width:20px;height:20px;border-radius:50%;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" style="width:12px;height:12px;"><path d="M21 4H8l-7 8 7 8h13a2 2 0 002-2V6a2 2 0 00-2-2z"/></svg></div>',
-                        iconSize: [24, 24],
-                        iconAnchor: [12, 12]
-                    });
-
-                    L.marker([lat, lon], { icon: recycleIcon }).addTo(markersLayer).bindPopup(`<b>${name}</b><br/>Accepts: ${acceptsText}`);
-                });
-            } catch (e) {
-                console.error("Error fetching map data", e);
+            } catch (error) {
+                console.error("Places API search failed:", error);
             }
-
+            
             document.getElementById('map-loading').style.display = 'none';
         }
 
