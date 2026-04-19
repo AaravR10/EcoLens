@@ -13,7 +13,7 @@ You can find our project at: ecolens0.web.app
 
 Created by 4 people: Aarav, Abhi, Ezra, & Suyash
 
-##Scenario##\
+#Scenario\
 Many of us have faced a dilemma when trying to throw things away. It’s not that we’re too lazy to trash things, but that we don’t know what should be recycled:
 Is plastic recyclable? Kind of?
 Is cardboard recyclable? Maybe?
@@ -21,11 +21,11 @@ Is paper recyclable? I guess?
 To make things clear, recycling is very complicated, and that’s why some people end up foregoing it and just sending all their trash to the landfill.
 We set out to find an easier way to identify what can be recycled and what can’t, using AI. Introducing EcoLens!
 ___
-##About EcoLens\
+#About EcoLens\
 An interactive website where users scan trash into a custom-trained LLM modeled
 Based on municipal codes, provide feedback on how and where to dispose of it
 ___
-##About EcoWorld
+#About EcoWorld
 Recycling isn’t exactly fun.
 So we made it fun! EcoWorld is a full-scale web game developed in three.js and HTML to make recycling rewarding. Whenever you scan a recyclable product, it’s added directly into your game (which is connected to your account). This allows you to build fun things in the game, such as farms & factories!
 ___
