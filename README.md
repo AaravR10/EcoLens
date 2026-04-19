@@ -19,33 +19,33 @@ To make things clear, recycling is very complicated, and that’s why some peopl
 We set out to find an easier way to identify what can be recycled and what can’t, using AI. Introducing EcoLens!
 
 ## About EcoLens
-An interactive website where users scan trash into a custom-trained LLM modeled
-Based on municipal codes, provide feedback on how and where to dispose of it
+An interactive website where users scan trash into a custom-trained LLM modeled.
+Based on municipal codes, provide feedback on how and where to dispose of it.
 
 ## About EcoWorld
 Recycling isn’t exactly fun.
-So we made it fun! EcoWorld is a full-scale web game developed in three.js and HTML to make recycling rewarding. Whenever you scan a recyclable product, it’s added directly into your game (which is connected to your account). This allows you to build fun things in the game, such as farms & factories!
+So we made it fun! EcoWorld is a full-scale web game developed in three.js and HTML to make recycling rewarding. Whenever you scan a recyclable product, it’s added directly into your game (which is connected to your account). This allows you to build fun things in the game, such as greenhouses!
 
 ## How Did We Build EcoLens?
 We built EcoLens using a variety of different tools and services:
 We built the general website using Antigravity as our IDE.
-We trained the AI using a convoluted neural network using TensorFlow.js for image classification
+We trained the AI using a convoluted neural network using TensorFlow.js for image classification.
 We hosted our website using Google Firebase.
 Our account system uses Supabase.
-EcoWorld was developed on three.js and in the Antigravity IDE
+EcoWorld was developed on three.js and in the Antigravity IDE.
 
 ## Challenges & Accomplishments
-Problem: Originally developed on Unity; however, we ran into compiling errors, and integration was slightly more challenging as it was written in C# 
-Solution: Revolved to creating a web game (our strong suit) and utilized three.js to keep the 3-d access
+Problem: Originally developed on Unity; however, we ran into compiling errors, and integration was slightly more challenging as it was written in C#.
+Solution: Revolved to creating a web game (our strong suit) and utilized three.js to keep the 3-d access.
 Problem: Another major challenge we faced was training our AI. We only had a limited time frame.
-Solution: However, a major breakthrough and a lucky reset of our AI model allowed us to identify with unexpected accuracy
+Solution: However, a major breakthrough and a lucky reset of our AI model allowed us to identify with unexpected accuracy.
 
 ## Our Future
 Across these two days, we were only able to do so much in this limited time frame.
 However, in the future, we plan on adding new features such as:
-Allowing more items to be built in EcoWorld
+Allowing more items to be built in EcoWorld.
 Improving our AI with more time to train and more data to train on.
-Implement a leaderboard for the people in the city who have recycled 
+Implement a leaderboard for the people in the city who have recycled.
 ##Slogan
 >“Our goal is to not just make recycling possible, but also enjoyable.”
 
