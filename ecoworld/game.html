@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>EcoCity — Build Your Green Future</title>
+    <meta name="description" content="Build a sustainable city using recycled resources from EcoLens scans.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --green: #3B6D11;
+            --green-light: #EAF3DE;
+            --green-mid: #639922;
+            --green-glow: #7fd63a;
+            --red: #A32D2D;
+            --red-light: #FCEBEB;
+            --amber: #d4940a;
+            --amber-light: #FAEEDA;
+            --blue: #1a6fc4;
+            --blue-light: #d4eaff;
+            --gray-100: #f5f5f3;
+            --gray-200: #e8e8e4;
+            --gray-400: #b4b2a9;
+            --gray-600: #7a7a72;
+            --gray-800: #2c2c2a;
+            --radius: 14px;
+            --radius-sm: 8px;
+            --panel-bg: rgba(18, 22, 12, 0.82);
+            --panel-border: rgba(99, 153, 34, 0.25);
+            --panel-glow: rgba(127, 214, 58, 0.08);
+            --surface: rgba(30, 36, 20, 0.9);
+            --font-main: 'Outfit', 'Ubuntu', sans-serif;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: var(--font-main);
+            background: #0a0d06;
+            color: #e8e8e4;
+            cursor: default;
+            user-select: none;
+        }
+
+        #game-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            outline: none;
+        }
+
+        /* ─── HUD Layer ─── */
+        #hud {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        #hud > * {
+            pointer-events: auto;
+        }
+
+        /* ─── Top Bar ─── */
+        .top-bar {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 18px;
+            background: linear-gradient(180deg, rgba(6,8,4,0.85) 0%, transparent 100%);
+        }
+
+        .top-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn-back {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 14px;
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: var(--radius-sm);
+            color: var(--green-glow);
+            font-family: var(--font-main);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s;
+            backdrop-filter: blur(12px);
+        }
+
+        .btn-back:hover {
+            background: rgba(59, 109, 17, 0.3);
+            border-color: var(--green-mid);
+        }
+
+        .btn-back svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        .game-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .game-title h1 {
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #7fd63a 0%, #c8e66e 50%, #7fd63a 100%);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: shimmer 3s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0%, 100% { background-position: 0% center; }
+            50% { background-position: 200% center; }
+        }
+
+        .game-title .eco-badge {
+            font-size: 10px;
+            font-weight: 700;
+            padding: 3px 8px;
+            background: rgba(59, 109, 17, 0.3);
+            border: 1px solid var(--panel-border);
+            border-radius: 20px;
+            color: var(--green-glow);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .top-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Eco-Points Display */
+        .eco-points-display {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 16px;
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: var(--radius);
+            backdrop-filter: blur(16px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .eco-points-display::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--green-glow), transparent);
+            opacity: 0.4;
+        }
+
+        .ep-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #c8e66e, #3B6D11);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            box-shadow: 0 0 12px rgba(127, 214, 58, 0.3);
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 12px rgba(127, 214, 58, 0.3); }
+            50% { box-shadow: 0 0 20px rgba(127, 214, 58, 0.5); }
+        }
+
+        .ep-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .ep-value {
+            font-size: 20px;
+            font-weight: 800;
+            color: #e8f5d4;
+            line-height: 1;
+        }
+
+        .ep-rate {
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--green-glow);
+            opacity: 0.8;
+        }
+
+        /* ─── Resources Panel (Left) ─── */
+        .resources-panel {
+            position: absolute;
+            top: 75px;
+            left: 14px;
+            width: 200px;
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: var(--radius);
+            backdrop-filter: blur(16px);
+            overflow: hidden;
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 14px;
+            border-bottom: 1px solid rgba(99, 153, 34, 0.15);
+        }
+
+        .panel-header h3 {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--green-glow);
+        }
+
+        .panel-header .panel-toggle {
+            background: none;
+            border: none;
+            color: var(--gray-400);
+            cursor: pointer;
+            padding: 2px;
+            display: flex;
+        }
+
+        .resource-list {
+            padding: 8px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .resource-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 7px 8px;
+            border-radius: var(--radius-sm);
+            transition: background 0.15s;
+        }
+
+        .resource-item:hover {
+            background: rgba(99, 153, 34, 0.1);
+        }
+
+        .resource-icon {
+            font-size: 20px;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255,255,255,0.05);
+            border-radius: 6px;
+            flex-shrink: 0;
+        }
+
+        .resource-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .resource-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: #d4d4cc;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .resource-count {
+            font-size: 18px;
+            font-weight: 800;
+            color: #e8f5d4;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .resource-item.empty .resource-count {
+            color: var(--gray-600);
+        }
+
+        /* ─── Buildings Panel (Bottom) ─── */
+        .buildings-panel {
+            position: absolute;
+            bottom: 14px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            padding: 10px 14px;
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: var(--radius);
+            backdrop-filter: blur(16px);
+            max-width: calc(100vw - 28px);
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+
+        .buildings-panel::-webkit-scrollbar {
+            display: none;
+        }
+
+        .building-card {
+            flex: 0 0 auto;
+            width: 120px;
+            padding: 10px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(99, 153, 34, 0.15);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            position: relative;
+        }
+
+        .building-card:hover {
+            background: rgba(99, 153, 34, 0.12);
+            border-color: var(--green-mid);
+            transform: translateY(-2px);
+        }
+
+        .building-card.selected {
+            background: rgba(59, 109, 17, 0.25);
+            border-color: var(--green-glow);
+            box-shadow: 0 0 20px rgba(127, 214, 58, 0.15), inset 0 0 20px rgba(127, 214, 58, 0.05);
+        }
+
+        .building-card.locked {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .building-card.locked:hover {
+            transform: none;
+            background: rgba(255,255,255,0.04);
+            border-color: rgba(99, 153, 34, 0.15);
+        }
+
+        .building-preview {
+            font-size: 28px;
+            line-height: 1;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .building-name {
+            font-size: 11px;
+            font-weight: 700;
+            color: #d4d4cc;
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        .building-cost {
+            font-size: 10px;
+            color: var(--gray-600);
+            text-align: center;
+            line-height: 1.3;
+        }
+
+        .building-ep {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--green-glow);
+            padding: 2px 8px;
+            background: rgba(59, 109, 17, 0.2);
+            border-radius: 10px;
+        }
+
+        .lock-badge {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            font-size: 12px;
+        }
+
+        /* ─── Info Panel (Right) ─── */
+        .info-panel {
+            position: absolute;
+            top: 75px;
+            right: 14px;
+            width: 200px;
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: var(--radius);
+            backdrop-filter: blur(16px);
+            overflow: hidden;
+        }
+
+        .stats-list {
+            padding: 10px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .stat-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--gray-400);
+        }
+
+        .stat-value {
+            font-size: 14px;
+            font-weight: 700;
+            color: #e8f5d4;
+        }
+
+        .stat-value.highlight {
+            color: var(--green-glow);
+        }
+
+        /* ─── Toast Notifications ─── */
+        .toast-container {
+            position: absolute;
+            top: 75px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 20;
+            pointer-events: none;
+        }
+
+        .toast {
+            padding: 10px 20px;
+            background: var(--surface);
+            border: 1px solid var(--panel-border);
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            font-weight: 600;
+            color: #e8f5d4;
+            backdrop-filter: blur(16px);
+            animation: toast-in 0.3s ease-out, toast-out 0.3s ease-in 2.2s forwards;
+            white-space: nowrap;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .toast.success {
+            border-color: var(--green-mid);
+            color: var(--green-glow);
+        }
+
+        .toast.error {
+            border-color: rgba(163, 45, 45, 0.5);
+            color: #f26666;
+        }
+
+        @keyframes toast-in {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes toast-out {
+            from { opacity: 1; }
+            to { opacity: 0; transform: translateY(-10px); }
+        }
+
+        /* ─── Loading Screen ─── */
+        .loading-screen {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: #0a0d06;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+            z-index: 100;
+            transition: opacity 0.6s ease;
+        }
+
+        .loading-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loading-logo {
+            font-size: 36px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #7fd63a, #c8e66e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .loading-bar-track {
+            width: 200px;
+            height: 4px;
+            background: rgba(99, 153, 34, 0.15);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .loading-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #3B6D11, #7fd63a, #c8e66e);
+            border-radius: 2px;
+            transition: width 0.4s ease;
+        }
+
+        .loading-text {
+            font-size: 13px;
+            color: var(--gray-600);
+            font-weight: 500;
+        }
+
+        /* ─── Placement Mode Indicator ─── */
+        .placement-indicator {
+            position: absolute;
+            bottom: 130px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 8px 20px;
+            background: rgba(59, 109, 17, 0.35);
+            border: 1px solid var(--green-mid);
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--green-glow);
+            display: none;
+            backdrop-filter: blur(12px);
+            animation: bounce-soft 1.5s ease-in-out infinite;
+        }
+
+        @keyframes bounce-soft {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(-4px); }
+        }
+
+        /* ─── Controls Help ─── */
+        .controls-help {
+            position: absolute;
+            bottom: 14px;
+            left: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            font-size: 11px;
+            color: var(--gray-600);
+            opacity: 0.7;
+        }
+
+        .controls-help kbd {
+            display: inline-block;
+            padding: 1px 5px;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 3px;
+            font-family: var(--font-main);
+            font-size: 10px;
+        }
+
+        /* ─── Login Prompt ─── */
+        .login-prompt {
+            position: absolute;
+            top: 75px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 20px;
+            background: rgba(133, 79, 11, 0.2);
+            border: 1px solid rgba(212, 148, 10, 0.3);
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            color: var(--amber);
+            backdrop-filter: blur(12px);
+            display: none;
+            text-align: center;
+        }
+
+        .login-prompt a {
+            color: var(--green-glow);
+            text-decoration: underline;
+            font-weight: 600;
+        }
+
+        /* ─── Responsive ─── */
+        @media (max-width: 768px) {
+            .resources-panel, .info-panel {
+                display: none;
+            }
+
+            .buildings-panel {
+                bottom: 8px;
+                padding: 8px 10px;
+                gap: 6px;
+            }
+
+            .building-card {
+                width: 100px;
+                padding: 8px;
+            }
+
+            .building-preview {
+                font-size: 22px;
+            }
+
+            .top-bar {
+                padding: 8px 12px;
+            }
+
+            .game-title h1 {
+                font-size: 16px;
+            }
+
+            .eco-points-display {
+                padding: 6px 12px;
+            }
+
+            .ep-value {
+                font-size: 16px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .game-title .eco-badge {
+                display: none;
+            }
+
+            .building-card {
+                width: 90px;
+            }
+
+            .building-name {
+                font-size: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loading-screen">
+        <div class="loading-logo">🌿 EcoCity</div>
+        <div class="loading-bar-track">
+            <div class="loading-bar-fill" id="loading-bar"></div>
+        </div>
+        <div class="loading-text" id="loading-status">Initializing...</div>
+    </div>
+
+    <!-- Three.js Canvas -->
+    <canvas id="game-canvas"></canvas>
+
+    <!-- HUD Overlay -->
+    <div id="hud">
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <div class="top-left">
+                <a href="../ecolens-frontend/public/index.html" class="btn-back" id="btn-back">
+                    <svg viewBox="0 0 24 24" fill="none"><path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    EcoLens
+                </a>
+                <div class="game-title">
+                    <h1>EcoCity</h1>
+                    <span class="eco-badge">Beta</span>
+                </div>
+            </div>
+            <div class="top-right">
+                <div class="eco-points-display" id="ep-display">
+                    <div class="ep-icon">⚡</div>
+                    <div class="ep-info">
+                        <div class="ep-value" id="ep-total">0</div>
+                        <div class="ep-rate" id="ep-rate">+0 EP/hr</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resources Panel -->
+        <div class="resources-panel" id="resources-panel">
+            <div class="panel-header">
+                <h3>📦 Resources</h3>
+            </div>
+            <div class="resource-list" id="resource-list">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+
+        <!-- Info Panel -->
+        <div class="info-panel" id="info-panel">
+            <div class="panel-header">
+                <h3>📊 City Stats</h3>
+            </div>
+            <div class="stats-list" id="stats-list">
+                <div class="stat-row">
+                    <span class="stat-label">Buildings</span>
+                    <span class="stat-value" id="stat-buildings">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">EP/hr</span>
+                    <span class="stat-value highlight" id="stat-ep-rate">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Total EP</span>
+                    <span class="stat-value" id="stat-total-ep">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">City Level</span>
+                    <span class="stat-value highlight" id="stat-level">1</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Building Selection Panel -->
+        <div class="buildings-panel" id="buildings-panel">
+            <!-- Populated by JS -->
+        </div>
+
+        <!-- Placement Indicator -->
+        <div class="placement-indicator" id="placement-indicator">
+            🏗️ Click on a tile to place building · <span style="opacity:0.6">ESC to cancel</span>
+        </div>
+
+        <!-- Toast Container -->
+        <div class="toast-container" id="toast-container"></div>
+
+        <!-- Login Prompt -->
+        <div class="login-prompt" id="login-prompt">
+            ⚠️ Playing in demo mode. <a href="../ecolens-frontend/public/login.html">Login</a> to sync your scans!
+        </div>
+
+        <!-- Controls -->
+        <div class="controls-help" id="controls-help">
+            <span><kbd>WASD</kbd> / <kbd>Arrows</kbd> Pan</span>
+            <span><kbd>Scroll</kbd> Zoom</span>
+            <span><kbd>ESC</kbd> Cancel</span>
+        </div>
+    </div>
+
+    <script type="module" src="game.js"></script>
+</body>
+</html>
