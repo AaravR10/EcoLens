@@ -403,14 +403,14 @@ async function loadUserData(userId) {
                 if (scan.verdict === 'Recycle') {
                     const mapped = mapMaterialToResource(scan.material);
                     if (mapped) {
-                        state.resources[mapped] = (state.resources[mapped] || 0) + 1;
+                        state.resources[mapped] = (state.resources[mapped] || 0) + 5;
                     }
                 }
             });
         }
         
         // Try to load saved state
-        const saved = localStorage.getItem('ecoCityState');
+        const saved = localStorage.getItem('ecoWorldState');
         if (saved) {
             const parsed = JSON.parse(saved);
             state.ep = parsed.ep || 0;
@@ -446,7 +446,7 @@ function loadDemoData() {
         if (scan.verdict === 'Recycle' || scan.verdict === 'Depends') {
             const mapped = mapMaterialToResource(scan.material);
             if (mapped) {
-                state.resources[mapped] = (state.resources[mapped] || 0) + 1;
+                state.resources[mapped] = (state.resources[mapped] || 0) + 5;
                 hasRealData = true;
             }
         }
@@ -459,7 +459,7 @@ function loadDemoData() {
 }
 
 function saveState() {
-    localStorage.setItem('ecoCityState', JSON.stringify({
+    localStorage.setItem('ecoWorldState', JSON.stringify({
         ep: state.ep,
         buildings: state.buildings
     }));

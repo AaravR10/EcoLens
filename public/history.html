@@ -187,6 +187,7 @@
                         const { data, error } = await supabaseClient
                             .from('scans')
                             .select('*')
+                            .eq('user_id', session.user.id)
                             .order('timestamp', { ascending: false })
                             .limit(50);
                         if (!error && data) {

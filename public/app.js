@@ -133,16 +133,32 @@ const ITEMS = [
             updateMap(true);
         }
 
+        function getDistance(lat1, lon1, lat2, lon2) {
+            const R = 3958.8; // miles
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        }
+
         async function updateMap(item) {
             if (!currentPos || !item) {
                 document.getElementById('map-heading').style.display = 'none';
                 document.getElementById('map-container').style.display = 'none';
+                const instrDiv = document.getElementById('result-instruction');
+                if (instrDiv) instrDiv.style.display = 'none';
                 return;
             }
 
             document.getElementById('map-heading').style.display = 'block';
             document.getElementById('map-container').style.display = 'block';
             document.getElementById('map-loading').style.display = 'flex';
+            
+            const instrDiv = document.getElementById('result-instruction');
+            if (instrDiv) {
+                instrDiv.innerHTML = `<div style="font-size:13px; color:var(--gray-600); font-style:italic;">Locating nearest drop-offs...</div>`;
+                instrDiv.style.display = 'block';
+            }
 
             if (!map) {
                 map = L.map('map').setView([currentPos.lat, currentPos.lng], 13);
@@ -174,6 +190,20 @@ const ITEMS = [
                 const data = await res.json();
                 let locations = data.elements || [];
 
+                if (locations.length > 0) {
+                    const validLocations = [];
+                    locations.forEach(loc => {
+                        const lat = loc.lat || loc.center?.lat;
+                        const lon = loc.lon || loc.center?.lon;
+                        if (lat && lon) {
+                            const dist = getDistance(currentPos.lat, currentPos.lng, lat, lon);
+                            validLocations.push({ ...loc, computedLat: lat, computedLon: lon, distanceMiles: dist });
+                        }
+                    });
+                    validLocations.sort((a, b) => a.distanceMiles - b.distanceMiles);
+                    locations = validLocations.slice(0, 3);
+                }
+
                 if (locations.length === 0) {
                     locations.push({
                         lat: currentPos.lat + 0.01,
@@ -187,9 +217,12 @@ const ITEMS = [
                     });
                 }
 
+                let directionsHtml = `<strong style="color:var(--green-dark); font-size:15px;">Directions to Nearest Drop-offs:</strong><ul style="margin-top:8px; padding-left:20px; line-height:1.6; margin-bottom:0;">`;
+
                 locations.forEach(loc => {
-                    const lat = loc.lat || loc.center?.lat;
-                    const lon = loc.lon || loc.center?.lon;
+                    const lat = loc.computedLat || loc.lat || loc.center?.lat;
+                    const lon = loc.computedLon || loc.lon || loc.center?.lon;
+                    const distStr = loc.distanceMiles ? loc.distanceMiles.toFixed(1) : (getDistance(currentPos.lat, currentPos.lng, lat, lon)).toFixed(1);
                     if (!lat || !lon) return;
 
                     const tags = loc.tags || {};
@@ -211,10 +244,19 @@ const ITEMS = [
                         iconAnchor: [12, 12]
                     });
 
-                    L.marker([lat, lon], { icon: recycleIcon }).addTo(markersLayer).bindPopup(`<b>${name}</b><br/>Accepts: ${acceptsText}`);
+                    L.marker([lat, lon], { icon: recycleIcon }).addTo(markersLayer).bindPopup(`<b>${name}</b><br/>${distStr} miles away<br/>Accepts: ${acceptsText}`);
+                    
+                    const mapsLink = `https://www.google.com/maps/dir/?api=1&origin=${currentPos.lat},${currentPos.lng}&destination=${lat},${lon}`;
+                    directionsHtml += `<li style="margin-bottom:6px;"><strong>${name}</strong> <span style="color:var(--gray-600); font-size:13px;">(${distStr} miles)</span><br><a href="${mapsLink}" target="_blank" style="color:var(--green); text-decoration:none; font-weight:600; font-size:13px; display:inline-block; margin-top:2px;">&#8594; Get Directions</a></li>`;
                 });
+                
+                directionsHtml += `</ul>`;
+                if (instrDiv) instrDiv.innerHTML = directionsHtml;
+
             } catch (e) {
                 console.error("Error fetching map data", e);
+                const instrDiv = document.getElementById('result-instruction');
+                if (instrDiv) instrDiv.style.display = 'none';
             }
 
             document.getElementById('map-loading').style.display = 'none';
@@ -613,7 +655,10 @@ const ITEMS = [
                 } catch (e) {
                     fallbackGeoDetect(lat, lng);
                 }
-            }, () => { badge.textContent = 'Location off'; });
+            }, () => { 
+                badge.textContent = 'Location off';
+                fallbackGeoDetect(40.7128, -74.0060); // Default to NY
+            }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 });
         }
 
         function fallbackGeoDetect(lat, lng) {
