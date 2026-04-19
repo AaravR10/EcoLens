@@ -13,7 +13,7 @@ You can find our project at: ecolens0.web.app
 
 Created by 4 people: Aarav, Abhi, Ezra, & Suyash
 
-##Scenario\
+##Scenario##\
 Many of us have faced a dilemma when trying to throw things away. It’s not that we’re too lazy to trash things, but that we don’t know what should be recycled:
 Is plastic recyclable? Kind of?
 Is cardboard recyclable? Maybe?
