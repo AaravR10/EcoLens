@@ -1,0 +1,1 @@
+const url = 'https://overpass-api.de/api/interpreter?data=' + encodeURIComponent('[out:json];(node["amenity"="recycling"](around:5000,47.6062,-122.3321);way["amenity"="recycling"](around:5000,47.6062,-122.3321););out center;'); fetch(url).then(r => r.json()).then(data => console.log(data.elements.length)).catch(e => console.error(e));
