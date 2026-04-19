@@ -1,4 +1,4 @@
-# General
+## General
 Welcome to EcoLens, a small program created by four high school students for the OSCEFHacks 2026 hackathon competition!
 EcoLens is a simple website with a simple purpose in mind: to identify if what we think is recyclable is actually recyclable.
 After all, cardboard is recyclable, but if it's in a greasy, oily state, do those words stay true?
@@ -6,7 +6,7 @@ No! That's why we use AI-powered technology to take a photo to truly identify if
 And to make things even better, we can pinpoint you to the closest location to you where you can recycle!
 You can find our project at: ecolens0.web.app
 
-# Founders
+## Founders
 Created by 4 people: Aarav, Abhi, Ezra, & Suyash
 
 ## Scenario
@@ -48,5 +48,5 @@ Implement a leaderboard for the people in the city who have recycled
 ##Slogan
 >“Our goal is to not just make recycling possible, but also enjoyable.”
 
-# Try it today! - ecolens0.web.app
+## Try it today! - ecolens0.web.app
 
