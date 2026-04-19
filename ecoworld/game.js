@@ -29,15 +29,15 @@ const PALETTE = {
 const RESOURCES = {
     'can': { name: 'Aluminum Can', icon: '🥤', color: PALETTE.metal },
     'plastic bag': { name: 'Plastic Bag', icon: '🛍️', color: PALETTE.plastic },
-    'cup': { name: 'Yogurt Cup', icon: '🥛', color: PALETTE.plastic },
-    'carton': { name: 'Pizza Box', icon: '🍕', color: PALETTE.paper },
+    'paper': { name: 'Paper', icon: '📄', color: PALETTE.paper },
+    'carton': { name: 'Cardboard', icon: '📦', color: PALETTE.paper },
     'bottle': { name: 'Glass Bottle', icon: '🍾', color: PALETTE.glass }
 };
 
 const BUILDINGS = {
     'greenhouse': {
         name: 'Plastic Greenhouse',
-        cost: { 'plastic bag': 5, 'cup': 2 },
+        cost: { 'plastic bag': 5, 'paper': 2 },
         epRate: 10,
         color: PALETTE.plastic,
         icon: '🌱'
@@ -81,7 +81,7 @@ const BUILDINGS = {
 
 // Game State
 let state = {
-    resources: { 'can': 0, 'plastic bag': 0, 'cup': 0, 'carton': 0, 'bottle': 0 },
+    resources: { 'can': 0, 'plastic bag': 0, 'paper': 0, 'carton': 0, 'bottle': 0 },
     ep: 0,
     epRate: 0,
     buildings: [],
@@ -400,11 +400,10 @@ async function loadUserData(userId) {
 
         if (scans) {
             scans.forEach(scan => {
-                const mat = scan.material.toLowerCase();
-                for (const key of Object.keys(RESOURCES)) {
-                    if (mat.includes(key)) {
-                        state.resources[key] = (state.resources[key] || 0) + 1;
-                        break;
+                if (scan.verdict === 'Recycle') {
+                    const mapped = mapMaterialToResource(scan.material);
+                    if (mapped) {
+                        state.resources[mapped] = (state.resources[mapped] || 0) + 1;
                     }
                 }
             });
@@ -426,8 +425,36 @@ async function loadUserData(userId) {
     }
 }
 
+function mapMaterialToResource(mat) {
+    if (!mat) return null;
+    mat = mat.toLowerCase();
+    if (mat.includes('carton') || mat.includes('cardboard') || mat.includes('box') || mat.includes('pizza')) return 'carton';
+    if (mat.includes('paper') || mat.includes('book') || mat.includes('newspaper') || mat.includes('magazine')) return 'paper';
+    if (mat.includes('bottle') || mat.includes('glass') || mat.includes('jar')) return 'bottle';
+    if (mat.includes('can') || mat.includes('metal') || mat.includes('tin') || mat.includes('aluminum')) return 'can';
+    if (mat.includes('plastic') || mat.includes('bag') || mat.includes('wrapper') || mat.includes('cup') || mat.includes('container')) return 'plastic bag';
+    // Default fallback so players always get a resource for recycling
+    return 'paper';
+}
+
 function loadDemoData() {
-    state.resources = { 'can': 50, 'plastic bag': 40, 'cup': 30, 'carton': 20, 'bottle': 15 };
+    const localHistory = JSON.parse(localStorage.getItem('scanHistory') || '[]');
+    state.resources = { 'can': 0, 'plastic bag': 0, 'paper': 0, 'carton': 0, 'bottle': 0 };
+    
+    let hasRealData = false;
+    localHistory.forEach(scan => {
+        if (scan.verdict === 'Recycle' || scan.verdict === 'Depends') {
+            const mapped = mapMaterialToResource(scan.material);
+            if (mapped) {
+                state.resources[mapped] = (state.resources[mapped] || 0) + 1;
+                hasRealData = true;
+            }
+        }
+    });
+
+    if (!hasRealData) {
+        state.resources = { 'can': 50, 'plastic bag': 40, 'paper': 30, 'carton': 20, 'bottle': 15 };
+    }
     state.ep = 100;
 }
 

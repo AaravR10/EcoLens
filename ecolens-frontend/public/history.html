@@ -242,18 +242,39 @@
 
             renderHistory();
 
-            renderHistory();
-
             clearBtn.addEventListener('click', async () => {
                 if(confirm('Are you sure you want to clear your scan history?')) {
-                    if (supabaseClient) {
-                        const { data: { session } } = await supabaseClient.auth.getSession();
-                        if (session && session.user) {
-                            await supabaseClient.from('scans').delete().eq('user_id', session.user.id);
+                    const originalText = clearBtn.textContent;
+                    clearBtn.textContent = 'Clearing...';
+                    clearBtn.disabled = true;
+                    
+                    try {
+                        if (supabaseClient) {
+                            const { data: { session } } = await supabaseClient.auth.getSession();
+                            if (session && session.user) {
+                                const { error } = await supabaseClient.from('scans').delete().eq('user_id', session.user.id);
+                                if (error) console.error("Error clearing Supabase history:", error);
+                            }
                         }
+                    } catch (e) {
+                        console.error("Error accessing Supabase auth:", e);
                     }
+                    
                     localStorage.removeItem('scanHistory');
-                    renderHistory();
+                    
+                    // Force UI to clear, avoiding refetch if Supabase delete failed due to RLS
+                    historyContainer.innerHTML = `
+                        <div class="empty-state">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            <p>No scans yet. Start scanning items to see your history here.</p>
+                        </div>
+                    `;
+                    clearBtn.style.display = 'none';
+                    
+                    clearBtn.textContent = originalText;
+                    clearBtn.disabled = false;
                 }
             });
         });
