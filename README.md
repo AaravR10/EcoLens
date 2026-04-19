@@ -1,3 +1,4 @@
+## [Try it today!](ecolens0.web.app)
 ## General
 Welcome to EcoLens, a small program created by four high school students for the OSCEFHacks 2026 hackathon competition!
 EcoLens is a simple website with a simple purpose in mind: to identify if what we think is recyclable is actually recyclable.
@@ -48,5 +49,5 @@ Implement a leaderboard for the people in the city who have recycled
 ##Slogan
 >“Our goal is to not just make recycling possible, but also enjoyable.”
 
-## Try it today! - ecolens0.web.app
+
 
