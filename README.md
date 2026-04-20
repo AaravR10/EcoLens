@@ -8,7 +8,7 @@ And to make things even better, we can pinpoint you to the closest location to y
 You can find our project at: ecolens0.web.app
 
 ## Founders
-Created by 4 people: Aarav, Abhi, Ezra, & Suyash
+Aarav (frontend and Game Developer) , Abhi (backend) , Ezra (backend and ML training), & Suyash (frontend)
 
 ## Scenario
 Many of us have faced a dilemma when trying to throw things away. It’s not that we’re too lazy to trash things, but that we don’t know what should be recycled:
