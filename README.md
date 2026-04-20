@@ -5,7 +5,7 @@ EcoLens is a simple website with a simple purpose in mind: to identify if what w
 After all, cardboard is recyclable, but if it's in a greasy, oily state, do those words stay true?
 No! That's why we use AI-powered technology to take a photo to truly identify if something is recyclable.
 And to make things even better, we can pinpoint you to the closest location to you where you can recycle!
-You can find our project at: ecolens0.web.app
+You can find our project at: [ecolens0.web.app](https://ecolens0.web.app)
 
 ## Founders
 Aarav (frontend and Game Developer) , Abhi (backend) , Ezra (backend and ML training), & Suyash (frontend)
